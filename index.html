@@ -193,20 +193,18 @@
       console.log("ZXing loaded");
     </script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <div class="card" id="home">
+    <div class="card" id="home" style="display:none; margin-top:16px">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
         <div>
             <h1 data-i18n="appTitle">Property ID and Mac Address Registry</h1>
             <p class="muted"><span data-i18n="hello">Hello</span>, <span id="userName" style="font-weight:600;"></span>!</p>
           </div>
-
         <div style="display:flex; gap: 8px;">            
             <button class="btn ghost" onclick="logout()" data-i18n="logout">
             Log out
             </button>
         </div>
         </div>
-      <h2 id="formTitle">Registry Form</h2>
       <div class="grid" style="margin-top:12px">
         <div><label data-i18n="labelDate">Date</label><input id="date" type="text" readonly></div>
         <div><label data-i18n="labelName">Property ID</label></div>
@@ -424,7 +422,6 @@ function toast(msg, ms=2000){
 function goHome(){
   stopScanner();
   resetForm();
-  document.getElementById('formCard').style.display='none';
   document.getElementById('home').style.display='block';
 }
 
@@ -651,9 +648,7 @@ function showApp(user) {
     document.getElementById('userName').textContent = user.name || user.email;
   }
 
-  // show form directly
-  document.getElementById('home').style.display = 'none';
-  document.getElementById('formCard').style.display = 'block';
+  document.getElementById('home').style.display = 'block';
 
   // set date
   document.getElementById('date').value = fmtDate();
