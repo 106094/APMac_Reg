@@ -539,6 +539,7 @@ const payload = {
     });
 
     toast(t('toastSubmitted').replace('{n}', ids.length));
+    maybeHidePreview(document.getElementById('name'));
     resetForm();               // ✅ clear immediately
     // or goHome();
   }catch(e){
@@ -1007,7 +1008,21 @@ function resetForm(){
   document.getElementById('date').value = fmtDate();
   document.getElementById('name').value = '';
 
-  // Clear property rows
+  // ✅ Clear OCR preview for the main name field
+  maybeHidePreview(document.getElementById('name'));
+
+  // ✅ Clear any OCR previews that might still exist anywhere
+  document.querySelectorAll('.ocr-preview').forEach(img => {
+    img.src = "";
+    img.style.display = "none";
+  });
+
+  // ✅ Remove any stored preview data on inputs
+  document.querySelectorAll('input').forEach(inp => {
+    if (inp.dataset) delete inp.dataset.ocrPreview;
+  });
+
+  // Clear property rows (rebuild fresh)
   const wrap = document.getElementById('props');
   wrap.innerHTML = '';
   addPropertyRow(); // always keep one empty row
@@ -1015,6 +1030,7 @@ function resetForm(){
   // Reset scan state
   currentInputEl = null;
 }
+
 
 </script>
 </body>
