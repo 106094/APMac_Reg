@@ -71,7 +71,8 @@
       object-fit:contain;
       touch-action:none;
     }
-
+    #video { z-index: 1; }
+    #overlay { z-index: 2; }
     #overlay { display:block; }
     .modal .bar { display:flex; gap:8px; padding:10px; background:#0f172a; color:#fff; align-items:center; justify-content:space-between }
     .modal .bar .btn { border-radius:8px; padding:8px 10px; }
@@ -109,7 +110,6 @@
       opacity:.85;
     }
     .scan-btn:hover{ opacity:1; }
-    
   </style>
 </head>
 <body>
@@ -769,7 +769,7 @@ async function openOCR(targetId=null, directInputEl=null){
 
   // ✅ OCR needs drawing enabled
   overlay.style.pointerEvents = "auto";
-
+ bindOverlayEvents();
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment" }
@@ -902,6 +902,37 @@ function endDraw(){
   snapshotAndOCR();
 }
 
+function bindOverlayEvents(){
+  const overlay = document.getElementById('overlay');
+  if (!overlay || overlay.dataset.bound === "1") return;
+  overlay.dataset.bound = "1";
+
+  // Use pointer events = works for mouse + touch
+  overlay.addEventListener("pointerdown", (e) => {
+    if (!ocrMode) return;
+    overlay.setPointerCapture?.(e.pointerId);
+    startDraw(e);
+  }, { passive: false });
+
+  overlay.addEventListener("pointermove", (e) => {
+    if (!ocrMode) return;
+    moveDraw(e);
+  }, { passive: false });
+
+  overlay.addEventListener("pointerup", (e) => {
+    if (!ocrMode) return;
+    endDraw(e);
+  }, { passive: false });
+
+  overlay.addEventListener("pointercancel", () => {
+    drawing = false;
+  });
+}
+
+// bind as soon as DOM is ready
+window.addEventListener("DOMContentLoaded", bindOverlayEvents);
+
+  
 function showOCRPreviewForTarget(inputEl, dataUrl){
   const img = inputEl?.closest(".field")?.querySelector(".ocr-preview");
   if (img){
