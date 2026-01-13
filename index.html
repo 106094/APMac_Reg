@@ -512,8 +512,8 @@ async function submitForm(){
 
   if (!name) { toast(t('toastNameEmpty')); return; }
   if (ids.length === 0) { toast(t('toastIdEmpty')); return; }
-  const user = JSON.parse(localStorage.getItem("inventoryAppUser") || "{}");
-  const email = user.email || "";
+    const user = JSON.parse(localStorage.getItem('inventoryAppUser') || '{}');
+    const email = (user.email || '').toLowerCase();
 
 const payload = {
   action: "submit",
@@ -522,7 +522,6 @@ const payload = {
   propertyIds: ids,
   email
 };
-
 
   // ✅ UX: disable button while submitting
   const btn = document.querySelector('[onclick="submitForm()"]');
@@ -533,15 +532,18 @@ const payload = {
   try{
     await fetch(SCRIPT_URL, {
       method:'POST',
-      mode:'no-cors',
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify(payload),
     });
-
-    toast(t('toastSubmitted').replace('{n}', ids.length));
+  const j = await r.json();
+    if (!j.ok) {
+    toast('Submit blocked: ' + (j.error || 'unknown'));
+    return;
+        }
+    toast(`Submitted ${ids.length} item(s)`);
     maybeHidePreview(document.getElementById('name'));
     resetForm();               // ✅ clear immediately
-    // or goHome();
+        // or goHome();
   }catch(e){
     toast(t('toastSubmitFail') + (e?.message || e));
   }finally{
@@ -647,7 +649,7 @@ window.openScanner = openScanner;
 
 <script>
 // ==================== CONFIGURATION ====================
-  const SHEET_ID        = '1AQ4cvZ_SjbIkW-ZwJz2QbB_67Sepo4RUUtlkyNGsutE'; 
+  const SHEET_ID        = '1WY7qdwqCAel2eq6brMvFu9lLuLC1WcF58g-eFOBnPrA'; 
   const CLIENT_ID       = '941275028852-6d7m0cbgpa67vvhrsspgcn0a81m03hc9.apps.googleusercontent.com';
   const SHEET_NAME      = 'authnames'
   const RANGE           = 'A:A'; 
@@ -710,39 +712,25 @@ window.addEventListener('load', () => {
   applyLanguage();
 });
 
-
+async function checkAuth(email){
+  const r = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'check-auth', email })
+  });
+  const j = await r.json();
+  return j.authorized === true;
+}
 async function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
   const email = payload.email.toLowerCase();
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&range=${RANGE}`;
-  
-  try {
-    const csv = await fetch(url).then(r => r.text());
-    const allowedEmails = parseCsvToEmails(csv);
-
-    if (allowedEmails.includes(email)) {
-      try {
-        fetch(SCRIPT_URL, {
-          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'login-log', email, status: 'AUTHORIZED', note: 'authnames-list' })
-        });
-      } catch (e) { console.warn('Login log failed', e); }
-
-      localStorage.setItem('inventoryAppUser', JSON.stringify(payload));
-      showApp(payload);
-    } else {
-      try {
-        fetch(SCRIPT_URL, {
-          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'login-log', email, status: 'BLOCKED', note: 'not-in-authnames' })
-        });
-      } catch (e) { console.warn('Login log failed', e); }
-      showBlocked();
-    }
-  } catch (e) {
-    console.error('Auth error:', e);
-    alert('Error checking authorization.');
-  }
+  const allowed = await checkAuth(email);
+  if (allowed) {
+  localStorage.setItem('inventoryAppUser', JSON.stringify(payload));
+  showApp(payload);
+} else {
+  showBlocked();
+}
 }
 
 async function openOCR(targetId=null, directInputEl=null){
