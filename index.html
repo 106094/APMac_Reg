@@ -713,14 +713,12 @@ window.addEventListener('load', () => {
 });
 
 async function checkAuth(email){
-  const r = await fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ action:'check-auth', email })
-  });
+  const url = `${SCRIPT_URL}?action=check-auth&email=${encodeURIComponent(email)}`;
+  const r = await fetch(url);
   const j = await r.json();
   return j.authorized === true;
 }
+
 async function handleCredentialResponse(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
   const email = payload.email.toLowerCase();
